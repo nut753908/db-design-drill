@@ -53,6 +53,17 @@ mvn spring-boot:run
 
 起動後、`http://localhost:8080/` にアクセスしてください。
 
+## テスト
+
+DDL提出→設計レビュー→実装提出→実装レビューという一連のフローを、実際のHTTPリクエスト経由・実際のPostgreSQLに対して検証する統合テストがあります(`backend/src/test`)。生成AI(Lambda)呼び出しはモック化しているため、テスト実行にAWS/Gemini APIの認証情報は不要です。
+
+```bash
+docker compose up -d db
+docker exec db-design-drill-db-1 psql -U postgres -c "CREATE DATABASE dbdesigndrill_test"  # 初回のみ
+cd backend
+mvn test
+```
+
 ## 現バージョンのスコープ外(今後の拡張候補)
 
 - DDLの実際の実行検証(構文チェック)
