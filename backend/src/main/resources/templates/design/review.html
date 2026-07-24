@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>設計レビュー結果 - DB設計ドリル</title>
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header><h1><a th:href="@{/history}">DB設計ドリル</a></h1></header>
+<main>
+<h2>設計レビュー結果</h2>
+
+<section>
+  <h3>提出したDDL</h3>
+  <pre class="text-block" th:text="${submission.ddlText}"></pre>
+</section>
+
+<section>
+  <h3>AIレビュー</h3>
+  <pre class="text-block" th:text="${submission.reviewComment}"></pre>
+</section>
+
+<section>
+  <h3>模範解答例</h3>
+  <pre class="text-block" th:text="${submission.modelAnswer}"></pre>
+</section>
+
+<section>
+  <h3>この設計に基づいてJPA実装を提出</h3>
+  <form th:action="@{/design-submissions/{id}/implementation-submissions(id=${submission.id})}" method="post">
+    <textarea name="codeText" rows="15" placeholder="@Entity ..." required></textarea>
+    <button type="submit">実装をレビューする</button>
+  </form>
+</section>
+
+<section>
+  <h3>これまでの実装提出</h3>
+  <ul>
+    <li th:each="s : ${implementationSubmissions}">
+      <a th:href="@{/implementation-submissions/{id}(id=${s.id})}"
+         th:text="${#temporals.format(s.createdAt, 'yyyy-MM-dd HH:mm')}"></a>
+    </li>
+  </ul>
+  <p th:if="${#lists.isEmpty(implementationSubmissions)}">まだ提出はありません</p>
+</section>
+
+<p><a th:href="@{/problems/{id}(id=${submission.problem.id})}">お題に戻る</a></p>
+</main>
+</body>
+</html>

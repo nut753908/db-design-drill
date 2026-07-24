@@ -1,0 +1,8 @@
+backend/target/
+lambda/package/
+lambda/function.zip
+lambda/__pycache__/
+*.class
+.idea/
+*.iml
+.claude/settings.local.json

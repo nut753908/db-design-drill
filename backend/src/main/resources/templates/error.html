@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>エラー - DB設計ドリル</title>
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header><h1><a th:href="@{/history}">DB設計ドリル</a></h1></header>
+<main>
+<h2>エラーが発生しました</h2>
+<p th:text="${message}"></p>
+<p><a th:href="@{/history}">トップに戻る</a></p>
+</main>
+</body>
+</html>

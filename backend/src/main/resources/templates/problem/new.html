@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>お題を作成 - DB設計ドリル</title>
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header><h1><a th:href="@{/history}">DB設計ドリル</a></h1></header>
+<main>
+<h2>お題を作成</h2>
+<form th:action="@{/problems}" method="post">
+  <label>ジャンル
+    <select name="genre">
+      <option th:each="g : ${genres}" th:value="${g.name()}" th:text="${g.label}"></option>
+    </select>
+  </label>
+  <label>難易度
+    <select name="difficulty">
+      <option th:each="d : ${difficulties}" th:value="${d.name()}" th:text="${d.label}"></option>
+    </select>
+  </label>
+  <button type="submit">お題を生成する</button>
+</form>
+</main>
+</body>
+</html>
