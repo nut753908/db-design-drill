@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>お題詳細 - DB設計ドリル</title>
+<link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header><h1><a th:href="@{/history}">DB設計ドリル</a></h1></header>
+<main>
+<h2 th:text="${problem.genre.label} + '(' + ${problem.difficulty.label} + ')'"></h2>
+
+<section>
+  <h3>要件</h3>
+  <pre class="text-block" th:text="${problem.requirementText}"></pre>
+</section>
+
+<section>
+  <h3>DDLを入力して提出</h3>
+  <form th:action="@{/problems/{id}/design-submissions(id=${problem.id})}" method="post">
+    <textarea name="ddlText" rows="15" placeholder="CREATE TABLE ..." required></textarea>
+    <button type="submit">設計をレビューする</button>
+  </form>
+</section>
+
+<section>
+  <h3>これまでの設計提出</h3>
+  <ul>
+    <li th:each="s : ${designSubmissions}">
+      <a th:href="@{/design-submissions/{id}(id=${s.id})}"
+         th:text="${#temporals.format(s.createdAt, 'yyyy-MM-dd HH:mm')}"></a>
+    </li>
+  </ul>
+  <p th:if="${#lists.isEmpty(designSubmissions)}">まだ提出はありません</p>
+</section>
+</main>
+</body>
+</html>
