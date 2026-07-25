@@ -4,12 +4,13 @@
 <meta charset="UTF-8">
 <title>お題を作成 - DB設計ドリル</title>
 <link rel="stylesheet" th:href="@{/css/style.css}">
+<script th:src="@{/js/loading.js}" defer></script>
 </head>
 <body>
 <header><h1><a th:href="@{/history}">DB設計ドリル</a></h1></header>
 <main>
 <h2>お題を作成</h2>
-<form th:action="@{/problems}" method="post">
+<form class="js-loading-form" th:action="@{/problems}" method="post">
   <label>ジャンル
     <select name="genre">
       <option th:each="g : ${genres}" th:value="${g.name()}" th:text="${g.label}"></option>
