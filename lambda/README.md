@@ -3,9 +3,9 @@
 DB設計ドリルのAI連携部分(お題生成・設計レビュー・実装レビュー)を担うLambda関数です。
 Spring Bootアプリケーションから直接 `invoke` される想定で、API Gatewayは経由しません。
 
-生成AIの呼び出しは **Google Gemini API**(Google AI Studio)経由で行います。
-クレジットカード登録なしで使える無料枠があり、AWS Bedrock/Anthropic APIで発生していた
-課金・クォータ関連の問題を回避できます。
+生成AIの呼び出しは **AWS Bedrock**(Anthropic Claude)経由で行います。呼び出しにはBedrock
+Runtimeの `Converse API` を使用し、依存パッケージはLambdaランタイム(python3.12)に標準搭載の
+`boto3` のみで動作するため、追加のパッケージ同梱は不要です。
 
 ## リクエスト/レスポンス形式
 
@@ -17,27 +17,36 @@ Spring Bootアプリケーションから直接 `invoke` される想定で、AP
 | review_design | `requirementText`, `ddlText` | `reviewComment`, `modelAnswer` |
 | review_implementation | `requirementText`, `ddlText`, `codeText` | `reviewComment` |
 
-## 事前準備: Google AI StudioでAPIキーを発行
+## 事前準備
 
-1. https://aistudio.google.com/apikey をブラウザで開く(Googleアカウントでログイン)
-2. 「Create API key」をクリックしてAPIキーを発行する
-3. 使いたいモデル名を控えておく(例: `gemini-2.0-flash`。利用可能なモデルはAI Studioの「Models」ページで確認できます)
+1. Bedrockのモデルアクセス設定で、使用するモデル(Anthropic Claude Sonnet 5)へのアクセスを
+   有効化しておく(AWSコンソール > Amazon Bedrock > Model access)。
+2. 使用するモデルIDを確認する。Claude Sonnet 5は `inferenceTypesSupported` が
+   `INFERENCE_PROFILE` のみのため、素のモデルID(`anthropic.claude-sonnet-5`)ではオンデマンド
+   呼び出しができない。必ずクロスリージョン推論プロファイルのIDを使うこと。
+   ```bash
+   aws bedrock list-inference-profiles --region <リージョン> \
+     --query "inferenceProfileSummaries[?contains(inferenceProfileId, 'sonnet-5')]"
+   ```
+   本プロジェクトでは `global.anthropic.claude-sonnet-5` を使用している。
+3. クロスリージョン推論はリクエスト量に応じてBedrockのService Quotas
+   (`Cross-region model inference tokens per minute for Anthropic Claude Sonnet X`)の上限に
+   達することがある。上限が低い場合はAWSコンソールのService Quotasからクォータ増加をリクエスト
+   する。
 
 ## デプロイ手順(手動・最小構成)
 
 前提: AWS CLIの認証情報が設定済みであること。
 
 ```bash
-# 1. 依存パッケージを同梱したデプロイパッケージを作成
+# 1. デプロイパッケージを作成(依存パッケージはランタイム標準のboto3のみで足りるため同梱不要)
 cd lambda
-rm -rf package function.zip
-pip install -r requirements.txt -t package
-cp handler.py package/
-cd package && zip -r ../function.zip . && cd ..
+rm -f function.zip
+zip function.zip handler.py
 
 # 2. Lambda実行ロールを作成(初回のみ。信頼ポリシーは lambda.amazonaws.com)
-#    ログ出力権限(AWSLambdaBasicExecutionRole相当)のみで十分です。
-#    Bedrockのように bedrock:InvokeModel 権限は不要です。
+#    ログ出力権限(AWSLambdaBasicExecutionRole相当)に加え、
+#    bedrock:InvokeModel 権限(対象モデル・推論プロファイルへの呼び出し)が必要。
 
 # 3. 関数を作成
 aws lambda create-function \
@@ -48,7 +57,7 @@ aws lambda create-function \
   --zip-file fileb://function.zip \
   --timeout 60 \
   --memory-size 512 \
-  --environment "Variables={GEMINI_API_KEY=<発行したAPIキー>,GEMINI_MODEL=gemini-2.0-flash}"
+  --environment "Variables={BEDROCK_MODEL_ID=global.anthropic.claude-sonnet-5}"
 
 # 更新時は create-function の代わりに:
 aws lambda update-function-code \
@@ -56,17 +65,18 @@ aws lambda update-function-code \
   --zip-file fileb://function.zip
 ```
 
-Spring Boot側から呼び出すIAMユーザー/ロールには、この関数に対する
-`lambda:InvokeFunction` 権限が必要です。
+Bedrockの呼び出しリージョンは、Lambda関数自体がデプロイされているリージョン(ランタイムが
+自動設定する `AWS_REGION`)がそのまま使われる。Spring Boot側から呼び出すIAMユーザー/ロールには、
+この関数に対する `lambda:InvokeFunction` 権限が別途必要。
 
 ## IAM権限まとめ
 
-- **Lambda実行ロール**: ログ出力権限(AWSLambdaBasicExecutionRole相当)のみ
+- **Lambda実行ロール**: ログ出力権限(AWSLambdaBasicExecutionRole相当)に加え、
+  `bedrock:InvokeModel`(対象モデル・推論プロファイルのARN、もしくは `*`)
 - **Spring Bootが使う認証情報**: 対象Lambda関数への `lambda:InvokeFunction` 権限
 
 ## 環境変数まとめ
 
 | 変数名 | 必須 | 説明 |
 |---|---|---|
-| `GEMINI_API_KEY` | 必須 | Google AI Studioで発行したAPIキー |
-| `GEMINI_MODEL` | 必須 | 使用するGeminiモデル名(例: `gemini-2.0-flash`) |
+| `BEDROCK_MODEL_ID` | 必須 | 使用するBedrockのモデルID/推論プロファイルID(例: `global.anthropic.claude-sonnet-5`) |

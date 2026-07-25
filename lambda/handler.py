@@ -1,11 +1,11 @@
 import os
 
-from google import genai
+import boto3
 
-MODEL = os.environ["GEMINI_MODEL"]
+MODEL_ID = os.environ["BEDROCK_MODEL_ID"]
 MODEL_ANSWER_MARKER = "---MODEL_ANSWER---"
 
-client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+client = boto3.client("bedrock-runtime")
 
 
 def lambda_handler(event, context):
@@ -35,7 +35,7 @@ def generate_problem(event):
 
 出力は要件文の本文のみとし、前置きや後書きは不要です。
 """
-    text = call_gemini(prompt)
+    text = call_bedrock(prompt)
     return {"requirementText": text}
 
 
@@ -61,7 +61,7 @@ def review_design(event):
 レビューコメントの後に区切り線 "{MODEL_ANSWER_MARKER}" を出力し、
 続けてあなたが考える模範解答のDDLを出力してください。
 """
-    text = call_gemini(prompt)
+    text = call_bedrock(prompt)
     review_comment, model_answer = split_model_answer(text)
     return {"reviewComment": review_comment, "modelAnswer": model_answer}
 
@@ -91,13 +91,16 @@ def review_implementation(event):
 
 出力はレビューコメントの本文のみとし、前置きや後書きは不要です。
 """
-    text = call_gemini(prompt)
+    text = call_bedrock(prompt)
     return {"reviewComment": text}
 
 
-def call_gemini(prompt):
-    response = client.models.generate_content(model=MODEL, contents=prompt)
-    return response.text
+def call_bedrock(prompt):
+    response = client.converse(
+        modelId=MODEL_ID,
+        messages=[{"role": "user", "content": [{"text": prompt}]}],
+    )
+    return response["output"]["message"]["content"][0]["text"]
 
 
 def split_model_answer(text):
