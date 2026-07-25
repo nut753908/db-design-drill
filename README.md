@@ -53,6 +53,21 @@ mvn spring-boot:run
 
 起動後、`http://localhost:8080/` にアクセスしてください。
 
+### AWS Lambdaなしで動かす(開発用スタブモード)
+
+生成AI連携側のモデルアクセス・クォータ承認待ちの間など、AWS連携なしで画面遷移だけを確認したい
+場合は `LAMBDA_STUB_MODE=true` を指定して起動する。この場合Lambda関数の呼び出しは行われず、
+固定のダミー応答(要件文・レビューコメント・模範解答)が返る。AWS CLIの認証情報やLambda関数の
+デプロイも不要。
+
+```bash
+cd backend
+export DB_USERNAME=postgres
+export DB_PASSWORD=postgres
+export LAMBDA_STUB_MODE=true
+mvn spring-boot:run
+```
+
 ## テスト
 
 DDL提出→設計レビュー→実装提出→実装レビューという一連のフローを、実際のHTTPリクエスト経由・実際のPostgreSQLに対して検証する統合テストがあります(`backend/src/test`)。生成AI(Lambda)呼び出しはモック化しているため、テスト実行にAWS/Bedrockの認証情報は不要です。
