@@ -1,11 +1,14 @@
+import json
 import os
+import urllib.request
 
-import boto3
-
-MODEL_ID = os.environ["BEDROCK_MODEL_ID"]
+MODEL_ID = os.environ["GEMINI_MODEL_ID"]
+API_KEY = os.environ["GEMINI_API_KEY"]
 MODEL_ANSWER_MARKER = "---MODEL_ANSWER---"
 
-client = boto3.client("bedrock-runtime")
+GEMINI_ENDPOINT = (
+    f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL_ID}:generateContent"
+)
 
 
 def lambda_handler(event, context):
@@ -35,7 +38,7 @@ def generate_problem(event):
 
 出力は要件文の本文のみとし、前置きや後書きは不要です。
 """
-    text = call_bedrock(prompt)
+    text = call_gemini(prompt)
     return {"requirementText": text}
 
 
@@ -61,7 +64,7 @@ def review_design(event):
 レビューコメントの後に区切り線 "{MODEL_ANSWER_MARKER}" を出力し、
 続けてあなたが考える模範解答のDDLを出力してください。
 """
-    text = call_bedrock(prompt)
+    text = call_gemini(prompt)
     review_comment, model_answer = split_model_answer(text)
     return {"reviewComment": review_comment, "modelAnswer": model_answer}
 
@@ -91,16 +94,23 @@ def review_implementation(event):
 
 出力はレビューコメントの本文のみとし、前置きや後書きは不要です。
 """
-    text = call_bedrock(prompt)
+    text = call_gemini(prompt)
     return {"reviewComment": text}
 
 
-def call_bedrock(prompt):
-    response = client.converse(
-        modelId=MODEL_ID,
-        messages=[{"role": "user", "content": [{"text": prompt}]}],
+def call_gemini(prompt):
+    body = json.dumps(
+        {"contents": [{"role": "user", "parts": [{"text": prompt}]}]}
+    ).encode("utf-8")
+    request = urllib.request.Request(
+        f"{GEMINI_ENDPOINT}?key={API_KEY}",
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
     )
-    return response["output"]["message"]["content"][0]["text"]
+    with urllib.request.urlopen(request, timeout=55) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    return payload["candidates"][0]["content"]["parts"][0]["text"]
 
 
 def split_model_answer(text):
