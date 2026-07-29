@@ -10,7 +10,7 @@ lambda/   AI連携用 Lambda関数 (Python)
 ```
 
 - **backend**: 画面表示、お題・提出物・レビュー結果のCRUD、履歴管理を担当
-- **lambda**: 生成AI(AWS Bedrock / Anthropic Claude)を呼び出し、お題生成・設計レビュー・実装レビューを行う
+- **lambda**: 生成AI(Google Gemini API)を呼び出し、お題生成・設計レビュー・実装レビューを行う
 
 Spring BootからLambdaへは、AWS SDK for Javaによる同期 `invoke` 呼び出しで連携します(API Gatewayは使用しません)。
 
@@ -28,7 +28,7 @@ Spring BootからLambdaへは、AWS SDK for Javaによる同期 `invoke` 呼び�
 - Java 17 / Maven
 - PostgreSQL
 - AWS CLIの認証情報設定済み(Lambda呼び出し用)
-- AWS BedrockでAnthropic Claudeのモデルアクセスを有効化済み(詳細は`lambda/README.md`)
+- Google AI StudioでGemini APIキーを発行済み(詳細は`lambda/README.md`)
 
 ### 1. データベースを準備
 
@@ -70,7 +70,7 @@ mvn spring-boot:run
 
 ## テスト
 
-DDL提出→設計レビュー→実装提出→実装レビューという一連のフローを、実際のHTTPリクエスト経由・実際のPostgreSQLに対して検証する統合テストがあります(`backend/src/test`)。生成AI(Lambda)呼び出しはモック化しているため、テスト実行にAWS/Bedrockの認証情報は不要です。
+DDL提出→設計レビュー→実装提出→実装レビューという一連のフローを、実際のHTTPリクエスト経由・実際のPostgreSQLに対して検証する統合テストがあります(`backend/src/test`)。生成AI(Lambda)呼び出しはモック化しているため、テスト実行にAWS/Geminiの認証情報は不要です。
 
 ```bash
 docker compose up -d db

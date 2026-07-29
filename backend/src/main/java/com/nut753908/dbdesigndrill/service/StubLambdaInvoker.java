@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * AWS Lambda(AI連携)を呼び出さず、固定の応答を返す開発用スタブ。
- * Bedrockのクォータ承認待ちなど、AI連携なしで画面遷移だけを確認したい場合に
+ * Gemini APIキーの発行待ちなど、AI連携なしで画面遷移だけを確認したい場合に
  * {@code app.lambda.stub-mode=true}(環境変数 {@code LAMBDA_STUB_MODE=true})で有効化する。
  */
 @Component
